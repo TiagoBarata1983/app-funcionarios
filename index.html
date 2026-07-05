@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Gestao de Funcionarios</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #64748b;
+      --line: #d8dee6;
+      --brand: #0f766e;
+      --brand-2: #2563eb;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --ok: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--brand);
+      color: #fff;
+      padding: 14px 16px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, .14);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      opacity: .9;
+    }
+    main {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    button, .file-label {
+      border: 0;
+      min-height: 44px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    button.primary { background: var(--brand); color: #fff; }
+    button.secondary { background: var(--brand-2); color: #fff; }
+    button.danger { background: #fee2e2; color: var(--bad); }
+    button.active { background: #134e4a; color: #fff; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .two {
+      grid-template-columns: 1fr 1fr;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .panel h2, .panel h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 9px 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 76px; resize: vertical; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .full { grid-column: 1 / -1; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+    .item-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: start;
+      font-weight: 700;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin-top: 4px;
+    }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #ecfeff;
+      color: #155e75;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .pill.bad { background: #fee2e2; color: var(--bad); }
+    .pill.warn { background: #fef3c7; color: var(--warn); }
+    .pill.ok { background: #dcfce7; color: var(--ok); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 3px;
+    }
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+    .employee-detail {
+      border-left: 4px solid var(--brand);
+    }
+    input[type="file"] { display: none; }
+    @media (max-width: 720px) {
+      main { padding: 10px; }
+      .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two, .form-grid, .stats { grid-template-columns: 1fr; }
+      header h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestao de Funcionarios</h1>
+    <p>Funcionarios, faltas, ferias, vales, subsidios e resumo mensal</p>
+  </header>
+
+  <main>
+    <nav class="tabs" aria-label="Menu principal">
+      <button class="active" data-tab="funcionarios">Funcionarios</button>
+      <button data-tab="faltas">Faltas</button>
+      <button data-tab="ferias">Ferias</button>
+      <button data-tab="vales">Vales</button>
+      <button data-tab="extras">Extras</button>
+      <button data-tab="resumo">Resumo</button>
+    </nav>
+
+    <section id="funcionarios" class="view">
+      <div class="grid two">
+        <div class="panel">
+          <h2>Novo funcionario</h2>
+          <form id="employeeForm" class="form-grid">
+            <div class="full">
+              <label>Nome</label>
+              <input name="name" required>
+            </div>
+            <div>
+              <label>Funcao</label>
+              <input name="role">
+            </div>
+            <div>
+              <label>Telefone</label>
+              <input name="phone" inputmode="tel">
+            </div>
+            <div>
+              <label>Inicio contrato</label>
+              <input name="contractStart" type="date">
+            </div>
+            <div>
+              <label>Fim contrato</label>
+              <input name="contractEnd" type="date">
+            </div>
+            <div>
+              <label>Dias de ferias por ano</label>
+              <input name="vacationDays" type="number" min="0" step="0.5" value="22">
+            </div>
+            <div>
+              <label>Saldo inicial de ferias</label>
+              <input name="initialVacation" type="number" step="0.5" value="0">
+            </div>
+            <div class="full">
+              <label>Observacoes</label>
+              <textarea name="notes"></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" type="submit">Guardar funcionario</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Funcionarios</h2>
+          <div id="employeeList" class="list"></div>
+        </div>
+      </div>
+      <div id="employeeDetail" class="panel employee-detail hidden" style="margin-top:12px"></div>
+    </section>
+
+    <section id="faltas" class="view hidden">
+      <div class="grid two">
+        <div class="panel">
+          <h2 id="absenceFormTitle">Registar falta</h2>
+          <form id="absenceForm" class="form-grid">
+            <input name="recordId" type="hidden">
+            <div class="full">
+              <label>Funcionario</label>
+              <select name="employeeId" required></select>
+            </div>
+            <div>
+              <label>Data</label>
+              <input name="date" type="date" required>
+            </div>
+            <div>
+              <label>Dias</label>
+              <input name="days" type="number" min="0.5" step="0.5" value="1" required>
+            </div>
+            <div class="full">
+              <label>O que fazer com estes dias?</label>
+              <select name="treatment" required>
+                <option value="desconto">Descontar no ordenado</option>
+                <option value="ferias">Contar como ferias gozadas</option>
+              </select>
+            </div>
+            <div class="full">
+              <label>Observacoes / motivo</label>
+              <textarea name="notes" placeholder="Ex.: avisou que tinha consulta, nao justificou, assunto familiar..."></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" id="absenceSubmit" type="submit">Guardar falta</button>
+              <button class="hidden" id="cancelAbsenceEdit" type="button">Cancelar edicao</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Faltas registadas</h2>
+          <div id="absenceList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ferias" class="view hidden">
+      <div class="grid two">
+        <div class="panel">
+          <h2>Registar ferias</h2>
+          <form id="vacationForm" class="form-grid">
+            <div class="full">
+              <label>Funcionario</label>
+              <select name="employeeId" required></select>
+            </div>
+            <div>
+              <label>Inicio</label>
+              <input name="start" type="date" required>
+            </div>
+            <div>
+              <label>Fim</label>
+              <input name="end" type="date" required>
+            </div>
+            <div>
+              <label>Dias uteis</label>
+              <input name="days" type="number" min="0.5" step="0.5" required>
+            </div>
+            <div>
+              <label>Estado</label>
+              <select name="status">
+                <option>Aprovado</option>
+                <option>Planeado</option>
+                <option>Usufruido</option>
+                <option>Cancelado</option>
+              </select>
+            </div>
+            <div class="full">
+              <label>Observacoes</label>
+              <textarea name="notes"></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" type="submit">Guardar ferias</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Ferias registadas</h2>
+          <div id="vacationList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vales" class="view hidden">
+      <div class="grid two">
+        <div class="panel">
+          <h2 id="advanceFormTitle">Registar vale</h2>
+          <form id="advanceForm" class="form-grid">
+            <input name="recordId" type="hidden">
+            <div class="full">
+              <label>Funcionario</label>
+              <select name="employeeId" required></select>
+            </div>
+            <div>
+              <label>Data</label>
+              <input name="date" type="date" required>
+            </div>
+            <div>
+              <label>Valor</label>
+              <input name="amount" type="number" min="0" step="0.01" required>
+            </div>
+            <div>
+              <label>Motivo</label>
+              <input name="reason" placeholder="Ex.: adiantamento">
+            </div>
+            <div>
+              <label>Descontado?</label>
+              <select name="paid">
+                <option value="nao">Nao</option>
+                <option value="sim">Sim</option>
+              </select>
+            </div>
+            <div>
+              <label>Data desconto</label>
+              <input name="paidDate" type="date">
+            </div>
+            <div class="full">
+              <label>Observacoes</label>
+              <textarea name="notes"></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" id="advanceSubmit" type="submit">Guardar vale</button>
+              <button class="hidden" id="cancelAdvanceEdit" type="button">Cancelar edicao</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Vales registados</h2>
+          <div id="advanceList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="extras" class="view hidden">
+      <div class="grid two">
+        <div class="panel">
+          <h2>Registar subsidio</h2>
+          <form id="subsidyForm" class="form-grid">
+            <div class="full">
+              <label>Funcionario</label>
+              <select name="employeeId" required></select>
+            </div>
+            <div>
+              <label>Tipo</label>
+              <select name="type">
+                <option value="ferias">Subsidio de ferias</option>
+                <option value="natal">Subsidio de natal</option>
+              </select>
+            </div>
+            <div>
+              <label>Ano</label>
+              <input name="year" type="number" min="2000" max="2100" required>
+            </div>
+            <div>
+              <label>Data de pagamento</label>
+              <input name="paidDate" type="date">
+            </div>
+            <div>
+              <label>Valor pago</label>
+              <input name="amount" type="number" min="0" step="0.01">
+            </div>
+            <div class="full">
+              <label>Foi pago na totalidade?</label>
+              <select name="paymentStatus">
+                <option value="total">Sim, na totalidade</option>
+                <option value="parcial">Parcialmente</option>
+                <option value="nao">Ainda nao foi pago</option>
+              </select>
+            </div>
+            <div class="full">
+              <label>Observacoes</label>
+              <textarea name="notes"></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" type="submit">Guardar subsidio</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h2>Trabalho em ferias</h2>
+          <form id="vacationWorkForm" class="form-grid">
+            <div class="full">
+              <label>Funcionario</label>
+              <select name="employeeId" required></select>
+            </div>
+            <div>
+              <label>Ano</label>
+              <input name="year" type="number" min="2000" max="2100" required>
+            </div>
+            <div>
+              <label>Periodo / data</label>
+              <input name="period" placeholder="Ex.: agosto ou 2026-08-12">
+            </div>
+            <div>
+              <label>Dias trabalhados</label>
+              <input name="days" type="number" min="0.5" step="0.5" required>
+            </div>
+            <div class="full">
+              <label>Trabalhou o periodo de ferias</label>
+              <select name="scope">
+                <option value="total">Na totalidade</option>
+                <option value="parcial">Parcialmente</option>
+              </select>
+            </div>
+            <div class="full">
+              <label>Observacoes</label>
+              <textarea name="notes"></textarea>
+            </div>
+            <div class="full actions">
+              <button class="primary" type="submit">Guardar trabalho em ferias</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:12px">
+        <div class="panel">
+          <h2>Subsidios registados</h2>
+          <div id="subsidyList" class="list"></div>
+        </div>
+        <div class="panel">
+          <h2>Trabalho em ferias registado</h2>
+          <div id="vacationWorkList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resumo" class="view hidden">
+      <div class="panel">
+        <h2>Resumo mensal</h2>
+        <div class="form-grid">
+          <div>
+            <label>Mes</label>
+            <input id="summaryMonth" type="month">
+          </div>
+          <div class="actions" style="align-items:end">
+            <button class="secondary" id="exportJson" type="button">Exportar copia</button>
+            <label class="file-label" for="importJson">Importar copia</label>
+            <input id="importJson" type="file" accept="application/json">
+          </div>
+        </div>
+      </div>
+      <div id="summaryList" class="grid" style="margin-top:12px"></div>
+    </section>
+  </main>
+
+  <script>
+    const KEY = "gestaoFuncionarios.v1";
+    const state = load();
+
+    function uid(prefix) {
+      return prefix + Math.random().toString(36).slice(2, 8).toUpperCase() + Date.now().toString(36).slice(-4).toUpperCase();
+    }
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+    function thisMonth() {
+      return new Date().toISOString().slice(0, 7);
+    }
+    function load() {
+      const saved = localStorage.getItem(KEY);
+      const data = saved ? JSON.parse(saved) : {};
+      return {
+        employees: data.employees || [],
+        absences: data.absences || [],
+        vacations: data.vacations || [],
+        advances: data.advances || [],
+        subsidies: data.subsidies || [],
+        vacationWork: data.vacationWork || [],
+      };
+    }
+    function save() {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      render();
+    }
+    function byEmployee(id) {
+      return state.employees.find(e => e.id === id);
+    }
+    function employeeName(id) {
+      return byEmployee(id)?.name || "Funcionario removido";
+    }
+    function money(n) {
+      return Number(n || 0).toLocaleString("pt-PT", { style: "currency", currency: "EUR" });
+    }
+    function sameMonth(date, month) {
+      return (date || "").slice(0, 7) === month;
+    }
+    function yearOf(month) {
+      return Number((month || thisMonth()).slice(0, 4));
+    }
+    function workDays(start, end) {
+      if (!start || !end) return "";
+      const a = new Date(start + "T00:00:00");
+      const b = new Date(end + "T00:00:00");
+      let days = 0;
+      for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) {
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) days++;
+      }
+      return days;
+    }
+    function fillSelects() {
+      document.querySelectorAll("select[name='employeeId']").forEach(select => {
+        const current = select.value;
+        select.innerHTML = state.employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join("");
+        if (current) select.value = current;
+      });
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
+    }
+    function item(html) {
+      return `<div class="item">${html}</div>`;
+    }
+    function renderEmployees() {
+      const list = document.getElementById("employeeList");
+      if (!state.employees.length) {
+        list.innerHTML = `<p class="muted">Ainda nao ha funcionarios.</p>`;
+        return;
+      }
+      list.innerHTML = state.employees.map(e => item(`
+        <div class="item-title">
+          <span>${escapeHtml(e.name)}</span>
+          <button type="button" data-detail="${e.id}">Abrir</button>
+        </div>
+        <div class="small">${escapeHtml(e.role || "Sem funcao")} ${e.phone ? " | " + escapeHtml(e.phone) : ""}</div>
+      `)).join("");
+      list.querySelectorAll("[data-detail]").forEach(btn => {
+        btn.addEventListener("click", () => showEmployeeDetail(btn.dataset.detail));
+      });
+    }
+    function showEmployeeDetail(id) {
+      const e = byEmployee(id);
+      const detail = document.getElementById("employeeDetail");
+      if (!e) return;
+      const abs = state.absences.filter(a => a.employeeId === id);
+      const vac = state.vacations.filter(v => v.employeeId === id);
+      const adv = state.advances.filter(a => a.employeeId === id);
+      const subsidies = state.subsidies.filter(s => s.employeeId === id);
+      const vacationWork = state.vacationWork.filter(w => w.employeeId === id);
+      const vacationUsed = vac.filter(v => v.status !== "Cancelado").reduce((s, v) => s + Number(v.days || 0), 0)
+        + abs.filter(a => a.treatment === "ferias").reduce((s, a) => s + Number(a.days || 0), 0);
+      const openAdvances = adv.filter(a => a.paid !== "sim").reduce((s, a) => s + Number(a.amount || 0), 0);
+      detail.classList.remove("hidden");
+      detail.innerHTML = `
+        <h2>${escapeHtml(e.name)}</h2>
+        <div class="stats">
+          <div class="stat"><strong>${Number(e.vacationDays || 0) + Number(e.initialVacation || 0)}</strong><span>Dias ferias totais</span></div>
+          <div class="stat"><strong>${vacationUsed}</strong><span>Dias ferias usados</span></div>
+          <div class="stat"><strong>${abs.length}</strong><span>Registos de falta</span></div>
+          <div class="stat"><strong>${money(openAdvances)}</strong><span>Vales em aberto</span></div>
+        </div>
+        <div class="grid two" style="margin-top:12px">
+          <div><h3>Faltas</h3>${abs.length ? `<div class="list">${abs.map(a => item(`
+            <div class="item-title">
+              <span>${a.date} - ${a.days} dia(s)</span>
+              <button type="button" data-edit-absence="${a.id}">Editar</button>
+            </div>
+            <div class="small">${a.treatment === "ferias" ? "Conta como ferias" : "Descontar no ordenado"}${a.notes ? " - " + escapeHtml(a.notes) : ""}</div>
+          `)).join("")}</div>` : `<p class="muted">Sem registos.</p>`}</div>
+          <div>${sectionList("Ferias", vac.map(v => `${v.start} a ${v.end} - ${v.days} dia(s) - ${escapeHtml(v.status)}`))}</div>
+          <div><h3>Vales</h3>${adv.length ? `<div class="list">${adv.map(a => item(`
+            <div class="item-title">
+              <span>${a.date} - ${money(a.amount)}</span>
+              <button type="button" data-edit-advance="${a.id}">Editar</button>
+            </div>
+            <div class="small">${a.paid === "sim" ? "Descontado" : "Em aberto"}${a.reason ? " - " + escapeHtml(a.reason) : ""}</div>
+          `)).join("")}</div>` : `<p class="muted">Sem registos.</p>`}</div>
+          <div>${sectionList("Contrato", [
+            `Funcao: ${escapeHtml(e.role || "")}`,
+            `Inicio: ${escapeHtml(e.contractStart || "")}`,
+            `Fim: ${escapeHtml(e.contractEnd || "")}`,
+            `Observacoes: ${escapeHtml(e.notes || "")}`
+          ])}</div>
+          <div>${sectionList("Subsidios", subsidies.map(s => `${s.year} - ${s.type === "ferias" ? "ferias" : "natal"} - ${paymentLabel(s.paymentStatus)}${s.paidDate ? " - pago em " + s.paidDate : ""}${s.amount ? " - " + money(s.amount) : ""}`))}</div>
+          <div>${sectionList("Trabalho em ferias", vacationWork.map(w => `${w.year} - ${w.days} dia(s) - ${w.scope === "total" ? "totalidade" : "parcial"}${w.period ? " - " + escapeHtml(w.period) : ""}`))}</div>
+        </div>
+        <div class="actions"><button type="button" id="closeDetail">Fechar</button></div>
+      `;
+      document.getElementById("closeDetail").addEventListener("click", () => detail.classList.add("hidden"));
+      detail.querySelectorAll("[data-edit-absence]").forEach(btn => {
+        btn.addEventListener("click", () => editAbsence(btn.dataset.editAbsence));
+      });
+      detail.querySelectorAll("[data-edit-advance]").forEach(btn => {
+        btn.addEventListener("click", () => editAdvance(btn.dataset.editAdvance));
+      });
+      detail.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function sectionList(title, rows) {
+      return `<h3>${title}</h3>${rows.length ? `<div class="list">${rows.map(r => item(`<div class="small">${r}</div>`)).join("")}</div>` : `<p class="muted">Sem registos.</p>`}`;
+    }
+    function paymentLabel(status) {
+      if (status === "total") return "pago na totalidade";
+      if (status === "parcial") return "pago parcialmente";
+      return "ainda nao pago";
+    }
+    function renderSimpleList(target, rows, empty) {
+      const el = document.getElementById(target);
+      el.innerHTML = rows.length ? rows.join("") : `<p class="muted">${empty}</p>`;
+    }
+    function renderRecords() {
+      renderSimpleList("absenceList", state.absences.slice().reverse().map(a => item(`
+        <div class="item-title">
+          <span>${escapeHtml(employeeName(a.employeeId))}</span>
+          <span class="pill ${a.treatment === "ferias" ? "ok" : "bad"}">${a.treatment === "ferias" ? "Ferias" : "Desconto"}</span>
+        </div>
+        <div class="small">${a.date} | ${a.days} dia(s)${a.notes ? " | " + escapeHtml(a.notes) : ""}</div>
+        <div class="actions"><button type="button" data-edit-absence="${a.id}">Editar</button></div>
+      `)), "Ainda nao ha faltas.");
+      document.querySelectorAll("[data-edit-absence]").forEach(btn => {
+        btn.addEventListener("click", () => editAbsence(btn.dataset.editAbsence));
+      });
+      renderSimpleList("vacationList", state.vacations.slice().reverse().map(v => item(`
+        <div class="item-title"><span>${escapeHtml(employeeName(v.employeeId))}</span><span class="pill ok">${escapeHtml(v.status)}</span></div>
+        <div class="small">${v.start} a ${v.end} | ${v.days} dia(s)${v.notes ? " | " + escapeHtml(v.notes) : ""}</div>
+      `)), "Ainda nao ha ferias.");
+      renderSimpleList("advanceList", state.advances.slice().reverse().map(a => item(`
+        <div class="item-title"><span>${escapeHtml(employeeName(a.employeeId))}</span><span class="pill ${a.paid === "sim" ? "ok" : "warn"}">${a.paid === "sim" ? "Descontado" : "Em aberto"}</span></div>
+        <div class="small">${a.date} | ${money(a.amount)}${a.reason ? " | " + escapeHtml(a.reason) : ""}${a.notes ? " | " + escapeHtml(a.notes) : ""}</div>
+        <div class="actions"><button type="button" data-edit-advance="${a.id}">Editar</button></div>
+      `)), "Ainda nao ha vales.");
+      document.querySelectorAll("[data-edit-advance]").forEach(btn => {
+        btn.addEventListener("click", () => editAdvance(btn.dataset.editAdvance));
+      });
+      renderSimpleList("subsidyList", state.subsidies.slice().reverse().map(s => item(`
+        <div class="item-title"><span>${escapeHtml(employeeName(s.employeeId))}</span><span class="pill ${s.paymentStatus === "total" ? "ok" : s.paymentStatus === "parcial" ? "warn" : "bad"}">${paymentLabel(s.paymentStatus)}</span></div>
+        <div class="small">${s.year} | ${s.type === "ferias" ? "Subsidio de ferias" : "Subsidio de natal"}${s.paidDate ? " | " + s.paidDate : ""}${s.amount ? " | " + money(s.amount) : ""}${s.notes ? " | " + escapeHtml(s.notes) : ""}</div>
+      `)), "Ainda nao ha subsidios registados.");
+      renderSimpleList("vacationWorkList", state.vacationWork.slice().reverse().map(w => item(`
+        <div class="item-title"><span>${escapeHtml(employeeName(w.employeeId))}</span><span class="pill">${w.scope === "total" ? "Totalidade" : "Parcial"}</span></div>
+        <div class="small">${w.year} | ${w.days} dia(s)${w.period ? " | " + escapeHtml(w.period) : ""}${w.notes ? " | " + escapeHtml(w.notes) : ""}</div>
+      `)), "Ainda nao ha trabalho em ferias registado.");
+    }
+    function renderSummary() {
+      const month = document.getElementById("summaryMonth").value || thisMonth();
+      const year = yearOf(month);
+      const rows = state.employees.map(e => {
+        const absDiscount = state.absences.filter(a => a.employeeId === e.id && sameMonth(a.date, month) && a.treatment === "desconto").reduce((s, a) => s + Number(a.days || 0), 0);
+        const absVacation = state.absences.filter(a => a.employeeId === e.id && sameMonth(a.date, month) && a.treatment === "ferias").reduce((s, a) => s + Number(a.days || 0), 0);
+        const vacationYear = state.vacations.filter(v => v.employeeId === e.id && (v.start || "").startsWith(String(year)) && v.status !== "Cancelado").reduce((s, v) => s + Number(v.days || 0), 0) + state.absences.filter(a => a.employeeId === e.id && (a.date || "").startsWith(String(year)) && a.treatment === "ferias").reduce((s, a) => s + Number(a.days || 0), 0);
+        const openAdvance = state.advances.filter(a => a.employeeId === e.id && a.paid !== "sim").reduce((s, a) => s + Number(a.amount || 0), 0);
+        const totalVacation = Number(e.vacationDays || 0) + Number(e.initialVacation || 0);
+        return item(`
+          <div class="item-title"><span>${escapeHtml(e.name)}</span><span class="pill">${month}</span></div>
+          <div class="stats" style="margin-top:8px">
+            <div class="stat"><strong>${absDiscount}</strong><span>Dias para desconto</span></div>
+            <div class="stat"><strong>${absVacation}</strong><span>Faltas como ferias</span></div>
+            <div class="stat"><strong>${totalVacation - vacationYear}</strong><span>Ferias restantes</span></div>
+            <div class="stat"><strong>${money(openAdvance)}</strong><span>Vales em aberto</span></div>
+          </div>
+        `);
+      });
+      renderSimpleList("summaryList", rows, "Ainda nao ha funcionarios.");
+    }
+    function render() {
+      fillSelects();
+      renderEmployees();
+      renderRecords();
+      renderSummary();
+    }
+
+    function openTab(tabName) {
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tabName));
+      document.querySelectorAll(".view").forEach(v => v.classList.toggle("hidden", v.id !== tabName));
+    }
+    document.querySelectorAll(".tabs button").forEach(btn => {
+      btn.addEventListener("click", () => openTab(btn.dataset.tab));
+    });
+    function values(form) {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+    function resetAbsenceForm() {
+      const form = document.getElementById("absenceForm");
+      form.reset();
+      form.recordId.value = "";
+      form.date.value = today();
+      form.days.value = 1;
+      document.getElementById("absenceFormTitle").textContent = "Registar falta";
+      document.getElementById("absenceSubmit").textContent = "Guardar falta";
+      document.getElementById("cancelAbsenceEdit").classList.add("hidden");
+    }
+    function resetAdvanceForm() {
+      const form = document.getElementById("advanceForm");
+      form.reset();
+      form.recordId.value = "";
+      form.date.value = today();
+      document.getElementById("advanceFormTitle").textContent = "Registar vale";
+      document.getElementById("advanceSubmit").textContent = "Guardar vale";
+      document.getElementById("cancelAdvanceEdit").classList.add("hidden");
+    }
+    function editAbsence(id) {
+      const absence = state.absences.find(a => a.id === id);
+      if (!absence) return;
+      openTab("faltas");
+      const form = document.getElementById("absenceForm");
+      fillSelects();
+      form.recordId.value = absence.id;
+      form.employeeId.value = absence.employeeId;
+      form.date.value = absence.date;
+      form.days.value = absence.days;
+      form.treatment.value = absence.treatment;
+      form.notes.value = absence.notes || "";
+      document.getElementById("absenceFormTitle").textContent = "Editar falta";
+      document.getElementById("absenceSubmit").textContent = "Guardar alteracao";
+      document.getElementById("cancelAbsenceEdit").classList.remove("hidden");
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function editAdvance(id) {
+      const advance = state.advances.find(a => a.id === id);
+      if (!advance) return;
+      openTab("vales");
+      const form = document.getElementById("advanceForm");
+      fillSelects();
+      form.recordId.value = advance.id;
+      form.employeeId.value = advance.employeeId;
+      form.date.value = advance.date;
+      form.amount.value = advance.amount;
+      form.reason.value = advance.reason || "";
+      form.paid.value = advance.paid || "nao";
+      form.paidDate.value = advance.paidDate || "";
+      form.notes.value = advance.notes || "";
+      document.getElementById("advanceFormTitle").textContent = "Editar vale";
+      document.getElementById("advanceSubmit").textContent = "Guardar alteracao";
+      document.getElementById("cancelAdvanceEdit").classList.remove("hidden");
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    document.getElementById("employeeForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      state.employees.push({ id: uid("F"), ...v, vacationDays: Number(v.vacationDays || 0), initialVacation: Number(v.initialVacation || 0) });
+      e.currentTarget.reset();
+      e.currentTarget.vacationDays.value = 22;
+      e.currentTarget.initialVacation.value = 0;
+      save();
+    });
+    document.getElementById("absenceForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      const record = {
+        employeeId: v.employeeId,
+        date: v.date,
+        days: Number(v.days || 0),
+        treatment: v.treatment,
+        notes: v.notes || "",
+      };
+      if (v.recordId) {
+        const index = state.absences.findIndex(a => a.id === v.recordId);
+        if (index >= 0) state.absences[index] = { ...state.absences[index], ...record };
+      } else {
+        state.absences.push({ id: uid("A"), ...record });
+      }
+      resetAbsenceForm();
+      save();
+    });
+    document.getElementById("cancelAbsenceEdit").addEventListener("click", resetAbsenceForm);
+    document.getElementById("vacationForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      state.vacations.push({ id: uid("V"), ...v, days: Number(v.days || 0) });
+      e.currentTarget.reset();
+      save();
+    });
+    document.getElementById("advanceForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      const record = {
+        employeeId: v.employeeId,
+        date: v.date,
+        amount: Number(v.amount || 0),
+        reason: v.reason || "",
+        paid: v.paid || "nao",
+        paidDate: v.paidDate || "",
+        notes: v.notes || "",
+      };
+      if (v.recordId) {
+        const index = state.advances.findIndex(a => a.id === v.recordId);
+        if (index >= 0) state.advances[index] = { ...state.advances[index], ...record };
+      } else {
+        state.advances.push({ id: uid("D"), ...record });
+      }
+      resetAdvanceForm();
+      save();
+    });
+    document.getElementById("cancelAdvanceEdit").addEventListener("click", resetAdvanceForm);
+    document.getElementById("subsidyForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      state.subsidies.push({
+        id: uid("S"),
+        employeeId: v.employeeId,
+        type: v.type,
+        year: Number(v.year || new Date().getFullYear()),
+        paidDate: v.paidDate || "",
+        amount: Number(v.amount || 0),
+        paymentStatus: v.paymentStatus,
+        notes: v.notes || "",
+      });
+      e.currentTarget.reset();
+      e.currentTarget.year.value = new Date().getFullYear();
+      save();
+    });
+    document.getElementById("vacationWorkForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = values(e.currentTarget);
+      state.vacationWork.push({
+        id: uid("W"),
+        employeeId: v.employeeId,
+        year: Number(v.year || new Date().getFullYear()),
+        period: v.period || "",
+        days: Number(v.days || 0),
+        scope: v.scope,
+        notes: v.notes || "",
+      });
+      e.currentTarget.reset();
+      e.currentTarget.year.value = new Date().getFullYear();
+      save();
+    });
+    document.querySelector("#vacationForm input[name='end']").addEventListener("change", () => {
+      const form = document.getElementById("vacationForm");
+      form.days.value = workDays(form.start.value, form.end.value);
+    });
+    document.getElementById("summaryMonth").addEventListener("change", renderSummary);
+    document.getElementById("exportJson").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "copia-gestao-funcionarios.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById("importJson").addEventListener("change", async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const imported = JSON.parse(await file.text());
+      state.employees = imported.employees || [];
+      state.absences = imported.absences || [];
+      state.vacations = imported.vacations || [];
+      state.advances = imported.advances || [];
+      state.subsidies = imported.subsidies || [];
+      state.vacationWork = imported.vacationWork || [];
+      save();
+    });
+    document.querySelectorAll("input[type='date']").forEach(i => {
+      if (!i.value && ["date"].includes(i.name)) i.value = today();
+    });
+    document.querySelector("#subsidyForm input[name='year']").value = new Date().getFullYear();
+    document.querySelector("#vacationWorkForm input[name='year']").value = new Date().getFullYear();
+    document.getElementById("summaryMonth").value = thisMonth();
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    render();
+  </script>
+</body>
+</html>
